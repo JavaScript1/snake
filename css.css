@@ -1,0 +1,27 @@
+
+*{ margin: 0; padding: 0;text-decoration: none; list-style: none;}
+#box{
+    text-align: center;
+}
+#canvas{
+    background-color: #eee;
+}
+#top{
+    width: 800px;
+    margin: 20px  auto;
+    display: flex;
+    justify-content: space-between;
+}
+#top > li{
+    width: 100px;
+    height: 30px;  
+}
+#top button{
+    width: 100px;
+    height: 30px;  
+    border: 1px solid #eee;
+    background-color: #eaeaea;
+}
+#top button:hover{
+    cursor:pointer;
+}
