@@ -5,9 +5,10 @@ let snake = {
 
         this.createCtx();
         this.register();
-        this.draw();
-        this.createReward();
+        // this.draw();
+        // this.createReward();
        
+        // 内存数据监听 并同步更新视图
         Object.defineProperty(this.data , '_snakeHead' , {
             // 对蛇头数据进行监听
             get(){
@@ -16,6 +17,7 @@ let snake = {
             } , 
             set(val){
                 // console.log('setter' , val);
+                
                 self.drawDelete();
                 let [hx , hy] = val;
                 let [rx , ry] = self.data.reward;
@@ -38,10 +40,12 @@ let snake = {
                 }
                 self.data.snake.unshift(val);
                 self.draw();
+                self.gameOver();
             }
         });
     } , 
     data:{
+        direction:'',
         reward:[] ,
         timer: null,
         ctx: null , 
@@ -51,7 +55,7 @@ let snake = {
         snakeSize: [9,9] ,
         snakeHead: [400,300] ,
         snake: [
-            [400,300] , [410,300] , [420,300]
+            [400,300] , [410,300] , [420,300] , [430 , 300] , [440 , 300]
         ]
     } , 
     register(){
@@ -61,6 +65,8 @@ let snake = {
                 // 箭头函数方式this被 start 按钮篡改
                 this.draw();
                 this.createReward();
+                this.data.direction = 'left';
+                this.move('left');
             };
         document.body.onkeydown = (event) => {
             switch(event.keyCode){
@@ -79,28 +85,55 @@ let snake = {
             }
         }
     } , 
-    animation( callback , parm){
+    animation( callback , direction ){
         let self = this;
         clearInterval( this.data.timer );
         this.data.timer = null;
         this.data.timer = setInterval( () => {
-            callback(parm);
+            callback();
         } , self.data.interval); 
     } , 
     move(direction){
+        let self = this;
+
         let dirFun = () => {
+            
             let snakeHead = Object.assign( [] , this.data._snakeHead);
+            
             let dirObj = {
                 left(){snakeHead[0] -= 10} ,
                 right(){snakeHead[0] += 10} ,
                 top(){snakeHead[1] -= 10} ,
-                bottom(){snakeHead[1] += 10}
+                bottom(){snakeHead[1] += 10} ,
+                default(){
+                    // 当 蛇 180度转向时 执行上一次方向事件
+                    this[self.data.direction]();
+                }
             };
+            
+            // 转向判断
+            let horizontal = ['left' , 'right'];
+            let vertical = ['top' , 'bottom'];
+            let nowDirection = self.data.direction;
+            
+            if( horizontal.includes(direction) && horizontal.includes(nowDirection)){
+                direction = 'default';
+            }
+            
+            if( vertical.includes(direction) && vertical.includes(nowDirection)){
+                direction = 'default';
+            }
+            
             dirObj[direction]();
             this.data._snakeHead = snakeHead;
+
+            if( direction !== 'default'){// 记录当前方向
+                this.data.direction = direction;
+            }
         }
-        // dirFun();
-        this.animation(dirFun);
+        // dirFun();  
+        
+        this.animation(dirFun , direction);
     } ,
     createCtx(){
         let instance = null;
@@ -137,7 +170,7 @@ let snake = {
             this.data.snake.forEach((item , index)=>{
                 if( index !== 0 ){
                     ctx.fillStyle = '#000';   
-                }
+                } 
                 ctx.fillRect(
                     item[0] , item[1] , ...this.data.snakeSize
                 )
@@ -150,6 +183,37 @@ let snake = {
                     item[0] , item[1] , ...this.data.snakeSize
                 )
             })
+    } , 
+    gameOver(){
+        let isOver = false;
+
+        let [x , y] = this.data.snakeHead;
+        let snake = this.data.snake.slice(4);
+        
+        for(let item of snake){ // 判断是否撞击蛇身
+            isOver = (x == item[0] && y == item[1] ) ? true : false;
+        }
+        /*
+            判断是否撞击墙壁
+            墙壁范围 800 * 600 
+            0 < x > 800
+            0 < y > 600 
+        */
+        
+        if( x < 0 || x > 790){
+            isOver = true;
+        }
+            
+        if( y < 0 || y > 590){
+            isOver = true;
+        }
+
+        if( isOver ){
+            clearInterval(this.data.timer);
+            alert('游戏结束');
+            location.reload();
+        }
+        return isOver; 
     } , 
     updata(type){// 更新分数和等级
         
